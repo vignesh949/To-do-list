@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="fullscreenBox">
+        <div class="sideBar">
+            <div class="profile-section">
+                <img src="Images/NEC0822025.JPG" alt="user-photo" class="user-profile-photo">
+                <div class="user-profile-text">
+                    <p class="application-name">To-Do List</p>
+                    <p class="user-name">A Vignesh</p>
+                </div>
+            </div>
+            <div class="profile-underLine"></div>
+            <div class="navigations">
+                <h2 class="todays-tasks">
+                    <img src="Images/wedding-day.png" alt="todays-tasks">Today's Tasks</h2>
+                <div class="task-categories">
+                    <ul>
+                        <li>Personal</li>
+                        <li>Freelance</li>
+                        <li>Work</li>
+                    </ul>
+                    <button type="button" class="filter-btn">
+                        <img src="Images/add.png" alt="add-filter">Add Filter</button>
+                </div>
+                <h2 class="scheduled-tasks">
+                    <img src="Images/event.png" alt="scheduled-tasks">Scheduled Tasks</h2>
+                <h2 class="settings">
+                    <img src="Images/setting.png" alt="settings">Settings</h2>
+            </div>     
+            <div class="top-title">
+                <p class="first-title">Today main focus</p>
+                <p class="second-title">Design team meeting</p>
+            </div>
+            <div class="all-tasks">
+                <div class="input-container">
+                    <input type="text" id="task-input" placeholder="What is your next task?" autocomplete="off">
+                    <div class="dots-container">
+                        <ul>
+                            <li></li>
+                            <li></li>
+                            <li></li>
+                        </ul>
+                    </div>
+                    <div id="clockContainer">
+                        <img 
+                            src="Images/clock.png" 
+                            alt="clock" 
+                            class="clock-img" 
+                            onclick="showInputBox()" 
+                            id="clockImage">
+                    </div>
+                    
+                    <div class="input-modal" id="inputModal">
+                        <div class="input-box">
+                            <label for="userInput">Enter the time (e.g., 10:30 AM)</label>
+                            <input type="text" id="userInput" placeholder="Enter time" />
+                            <button onclick="saveTask()">Submit</button>
+                            <button onclick="closeInputBox()">Close</button>
+                        </div>
+                    </div>
+                    <img src="Images/appointment (1).png" alt="submit" class="submit-btn">
+                </div>
+                
+                <div id="taskList" class="task-list">
+                   
+                </div>
+                
+            </div>
+        </div>
+
+
+
+
+        <script>
+           // Function to assign a color to the task dot dynamically
+function getDotColor(index) {
+    const colors = ['var(--dot-pink)', 'var(--dot-skyblue)', 'var(--dot-violet)'];
+    return colors[index % colors.length];
+}
+
+function saveTask() {
+    const taskTitle = document.getElementById('task-input').value.trim();
+    const userInput = document.getElementById('userInput').value.trim();
+
+    if (taskTitle === '' || userInput === '') {
+        alert('Please enter both a task title and a valid time!');
+        return;
+    }
+
+    const timeFormat = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](\s?[APap][Mm])?$/;
+    if (!timeFormat.test(userInput)) {
+        alert('Please enter time in a valid format (e.g., 10:30 AM or 14:30)!');
+        return;
+    }
+
+    const taskList = document.getElementById('taskList');
+    const newTask = document.createElement('div');
+    newTask.className = 'task-item';
+
+    const currentTasks = taskList.querySelectorAll('.task-item').length;
+    const dotColor = getDotColor(currentTasks); // Assign dynamic color
+
+    newTask.innerHTML = `
+        <div class="task-content" style="position: relative;">
+            <p class="task-title" style="position: relative;">
+                ${taskTitle}
+                <span style="
+                    position: absolute; 
+                    left: -25px; 
+                    top: 30%; 
+                    width: 10px; 
+                    height: 10px; 
+                    border-radius: 50%; 
+                    background-color: ${dotColor};">
+                </span>
+            </p>
+            <p class="task-time">${userInput}</p>
+        </div>
+        <img src="Images/dry-clean.png" alt="task-icon" class="circle-icon" onclick="changeIcon(this)">
+        <img src="delete.png" alt="delete-icon" class="delete-btn" onclick="deleteTask(this);" />
+    `;
+
+    taskList.appendChild(newTask);
+
+    updateSessionStorage();
+
+    document.getElementById('task-input').value = '';
+    document.getElementById('userInput').value = '';
+    closeInputBox();
+}
+
+
+
+
+            // Function to change the icon
+            function changeIcon(element) {
+                if (element.src.includes("dry-clean.png")) {
+                    element.src = "Images/checked.png"; // New icon
+                } else {
+                    element.src = "Images/dry-clean.png"; // Original icon
+                }
+            }
+
+            // Function to delete a task
+            function deleteTask(image) {
+                const taskItem = image.parentElement;
+                taskItem.remove(); // Remove the task item from the list
+
+                // Update session storage
+                updateSessionStorage();
+            }
+
+            // Update session storage
+            function updateSessionStorage() {
+                const taskList = document.getElementById('taskList');
+                const tasks = [];
+
+                // Get all tasks in the task list
+                taskList.querySelectorAll('.task-item').forEach(task => {
+                    const taskTitle = task.querySelector('.task-title').textContent;
+                    const taskTime = task.querySelector('.task-time').textContent;
+                    tasks.push({ title: taskTitle, time: taskTime });
+                });
+
+                // Store tasks in session storage
+                sessionStorage.setItem('tasks', JSON.stringify(tasks));
+            }
+
+            // Load tasks from session storage on page load
+            window.onload = function () {
+    const storedTasks = JSON.parse(sessionStorage.getItem('tasks')) || [];
+    const taskList = document.getElementById('taskList');
+
+    // Populate tasks from session storage
+    storedTasks.forEach((task, index) => {
+        const newTask = document.createElement('div');
+        newTask.className = 'task-item';
+
+        const dotColor = getDotColor(index); // Get dynamic color for the task
+
+        newTask.innerHTML = `
+            <div class="task-content" style="position: relative;">
+                <p class="task-title" style="position: relative;">
+                    ${task.title}
+                    <span style="
+                        position: absolute; 
+                        left: -25px; 
+                        top: 30%; 
+                        width: 10px; 
+                        height: 10px; 
+                        border-radius: 50%; 
+                        background-color: ${dotColor};">
+                    </span>
+                </p>
+                <p class="task-time">${task.time}</p>
+            </div>
+            <img src="Images/dry-clean.png" alt="task-icon" class="circle-icon" onclick="changeIcon(this)">
+            <img src="delete.png" alt="delete-icon" class="delete-btn" onclick="deleteTask(this);" />
+        `;
+
+        taskList.appendChild(newTask);
+    });
+};
+
+
+            function showInputBox() {
+                const inputModal = document.getElementById('inputModal');
+                inputModal.style.display = 'flex'; // Display the modal
+                inputModal.style.flexDirection = 'row';
+            }
+
+            function closeInputBox() {
+                const inputModal = document.getElementById('inputModal');
+                inputModal.style.display = 'none'; // Hide the modal
+            }
+        </script>
+    </body>
+</html>
